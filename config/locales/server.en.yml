@@ -4,3 +4,4 @@ en:
     robot_mcp_wiki_category_id: "Category where robot_wiki_create_topic and robot_wiki_reply may write (IT-Wiki). Exact category, subcategories are not included."
     robot_mcp_read_categories: "Additional categories robot_search and robot_read_topic may read. The wiki category is always included. Exact categories, subcategories are not included."
     robot_mcp_allowed_groups: "Groups whose members may use the Robot MCP tools."
+    robot_mcp_erp_task_url: "ERP form for logging time on a forum post (same as the post-menu button). The tools append url, user, topicId, postId and postNumber. Empty disables the link."

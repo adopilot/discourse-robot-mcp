@@ -12,3 +12,5 @@ plugins:
     list_type: compact
     default: "1"
     allow_any: false
+  robot_mcp_erp_task_url:
+    default: "http://olderp.robot.ba/ipPref/Task"
