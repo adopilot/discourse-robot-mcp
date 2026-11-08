@@ -874,7 +874,7 @@ module ::RobotMcp
           post_number: DiscourseMcp::OutputSchema::INTEGER,
           url: DiscourseMcp::OutputSchema::STRING,
           username: DiscourseMcp::OutputSchema::STRING,
-          erp_time_url: DiscourseMcp::OutputSchema::STRING,
+          erp_time_url: DiscourseMcp::OutputSchema::STRING_OR_NULL,
         )
 
       def self.call(arguments:, request_context:)
@@ -906,7 +906,7 @@ module ::RobotMcp
           topic_id: DiscourseMcp::OutputSchema::INTEGER,
           post_number: DiscourseMcp::OutputSchema::INTEGER,
           url: DiscourseMcp::OutputSchema::STRING,
-          erp_time_url: DiscourseMcp::OutputSchema::STRING,
+          erp_time_url: DiscourseMcp::OutputSchema::STRING_OR_NULL,
         )
 
       def self.call(arguments:, request_context:)
@@ -956,7 +956,7 @@ module ::RobotMcp
         DiscourseMcp::OutputSchema.object(
           topic_id: DiscourseMcp::OutputSchema::INTEGER,
           closed: DiscourseMcp::OutputSchema::BOOLEAN,
-          note_url: DiscourseMcp::OutputSchema::STRING,
+          note_url: DiscourseMcp::OutputSchema::STRING_OR_NULL,
           url: DiscourseMcp::OutputSchema::STRING,
         )
 
@@ -987,7 +987,7 @@ module ::RobotMcp
         DiscourseMcp::OutputSchema.object(
           topic_id: DiscourseMcp::OutputSchema::INTEGER,
           assigned_to: DiscourseMcp::OutputSchema::STRING,
-          note_url: DiscourseMcp::OutputSchema::STRING,
+          note_url: DiscourseMcp::OutputSchema::STRING_OR_NULL,
           url: DiscourseMcp::OutputSchema::STRING,
         )
 
