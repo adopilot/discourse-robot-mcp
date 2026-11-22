@@ -32,7 +32,10 @@ module ::RobotMcp
          ## Otvorene stavke
          Lista sa [ ] za ono što je ostalo.
       4. NIKAD ne upisuj lozinke, ključeve, tokene ni connection stringove sa lozinkom.
-         Umjesto vrijednosti napiši "lozinka: u trezoru".
+         Na mjestu vrijednosti ostavi prazno mjesto za trezor: [vault ask="kratak naziv"],
+         npr. "lozinka: [vault ask=\"Router Mostar admin\"]". Naziv mora biti jedinstven u objavi.
+         Nakon objave korisnik klikne "Upiši lozinku" i sam je upiše; ti je nikad ne saznaješ.
+         Ako lozinku treba upisati kolega: from="korisnickoime" (ili grupa); ko je još treba vidjeti: to="ime1,grupa".
       5. Prije objave pozovi robot_check_secrets, pa korisniku pokaži cijeli nacrt i gdje ide
          (nova tema sa naslovom ili dopuna postojeće). Objavi tek kad korisnik potvrdi.
       6. Korisnička imena ne piši sa @ (to šalje obavijesti i poziva AI botove), osim ako korisnik to izričito traži.
@@ -56,7 +59,9 @@ module ::RobotMcp
          - Urađeno: šta je završeno i kako se provjerava
          - Sljedeći koraci: koraci redom i šta je za njih potrebno
          - Pitanje: jasno pitanje i kontekst u 1-2 rečenice
-      5. NIKAD ne upisuj lozinke, ključeve ni tokene; umjesto vrijednosti napiši "lozinka: u trezoru".
+      5. NIKAD ne upisuj lozinke, ključeve ni tokene. Kad je potrebna lozinka (i kad je tražiš od podnosioca ili kolege),
+         ostavi prazno mjesto za trezor: [vault ask="kratak naziv" from="korisnickoime"]; ta osoba klikne
+         "Upiši lozinku" i upiše je, a vidi je autor objave, ona osoba i administratori trezora.
          Korisnike spominji sa @ samo ako korisnik želi da ih obavijesti; AI botove nikad.
       6. Pozovi robot_check_secrets, pokaži korisniku nacrt i temu, a objavi (robot_task_reply) tek kad potvrdi.
          Ako robot_task_reply javi da tema više nije dodijeljena korisniku, reci mu kome je dodijeljena i ponudi njegove trenutne zadatke.

@@ -3,6 +3,8 @@
 Dodatak za Discourse koji ugrađenom Discourse MCP serveru dodaje alate za IT tim:
 Claude (claude.ai, desktop, Claude Code) piše dokumentaciju o urađenom poslu i objavljuje je u IT-Wiki
 pod imenom prijavljenog korisnika, bez lozinki.
+Na mjestu lozinke Claude ostavlja prazno mjesto za trezor (`[vault ask="naziv"]`, plugin
+[discourse-secret-vault](https://github.com/adopilot/discourse-secret-vault)), a korisnik je poslije sam upiše.
 
 ## Alati
 

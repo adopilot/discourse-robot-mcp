@@ -44,7 +44,8 @@ module ::RobotMcp
       summary = findings.map { |f| "#{f[:kind]} (red #{f[:line]})" }.uniq.join(", ")
       raise DiscourseMcp::ToolError,
             "Objava odbijena: tekst izgleda kao da sadrži tajne podatke: #{summary}. " \
-              "Ukloni vrijednosti i umjesto njih napiši npr. \"lozinka: u trezoru\", pa pokušaj ponovo."
+              "Ukloni vrijednosti i umjesto njih ostavi prazno mjesto za trezor, npr. " \
+              "lozinka: [vault ask=\"Router admin\"], pa pokušaj ponovo."
     end
   end
 end
