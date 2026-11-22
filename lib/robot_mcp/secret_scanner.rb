@@ -26,14 +26,17 @@ module ::RobotMcp
 
     def scan(text)
       findings = []
-      text.to_s.each_line.with_index(1) do |line, number|
-        if (match = KEYWORD.match(line)) && !PLACEHOLDER.match?(match[1].strip)
-          findings << { kind: "lozinka/ključ uz ključnu riječ", line: number }
+      text
+        .to_s
+        .each_line
+        .with_index(1) do |line, number|
+          if (match = KEYWORD.match(line)) && !PLACEHOLDER.match?(match[1].strip)
+            findings << { kind: "lozinka/ključ uz ključnu riječ", line: number }
+          end
+          PATTERNS.each do |kind, pattern|
+            findings << { kind: kind, line: number } if pattern.match?(line)
+          end
         end
-        PATTERNS.each do |kind, pattern|
-          findings << { kind: kind, line: number } if pattern.match?(line)
-        end
-      end
       findings.uniq
     end
 

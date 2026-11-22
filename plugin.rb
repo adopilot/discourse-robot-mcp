@@ -2,7 +2,7 @@
 
 # name: discourse-robot-mcp
 # about: MCP alati za IT tim: dokumentacija u IT-Wiki, javljanje, rješavanje, zatvaranje i prebacivanje dodijeljenih tema kroz Claude, bez lozinki
-# version: 0.4.0
+# version: 0.5.0
 # authors: adopilot
 # url: https://github.com/adopilot/discourse-robot-mcp
 

@@ -20,7 +20,7 @@ module ::RobotMcp
       Dokumentuj u IT-Wiki (forum.robot.ba) ono što je urađeno u ovoj sesiji.
 
       1. Prvo pozovi robot_search da vidiš postoji li već tema za taj server, lokaciju ili sistem.
-         Ako postoji, predloži dopunu (robot_wiki_reply), inače novu temu (robot_wiki_create_topic).
+         Ako postoji, predloži dopunu (robot_reply), inače novu temu (robot_create_topic; bez category_id ide u IT-Wiki).
       2. Piši na bosanskom, jasno, za kolegu iz IT-a koji za godinu dana treba ponoviti ili provjeriti posao.
       3. Obrazac:
          **Ukratko:** 2-3 rečenice šta je urađeno i zašto.
@@ -101,8 +101,9 @@ module ::RobotMcp
         "robot_search",
         title: "Pretraga IT dokumentacije",
         description:
-          "Pretražuje IT-Wiki i ostale dozvoljene IT kategorije foruma. Vraća teme sa kratkim izvodom. " \
-            "Koristi prije pisanja dokumentacije da nađeš postojeću temu.",
+          "Pretražuje forum (sve teme koje prijavljeni korisnik vidi, bez privatnih poruka). Vraća teme sa kratkim izvodom. " \
+            "Koristi prije pisanja da nađeš postojeću temu, i kad korisnik traži lozinku: lozinke su u trezoru, " \
+            "pa traži po nazivu lozinke ili sistema i vrati link na objavu (kartica 🔒 naziv).",
         implementation: Search,
         input_schema:
           object_schema(
@@ -128,7 +129,8 @@ module ::RobotMcp
       plugin.register_mcp_tool(
         "robot_read_topic",
         title: "Čitanje teme",
-        description: "Čita postove teme iz IT-Wiki ili druge dozvoljene IT kategorije.",
+        description:
+          "Čita postove teme koju prijavljeni korisnik vidi na forumu (bez privatnih poruka).",
         implementation: ReadTopic,
         input_schema:
           object_schema(
@@ -157,10 +159,86 @@ module ::RobotMcp
           "Provjerava nacrt prije objave: traži lozinke, ključeve i tokene. Vraća vrstu i red nalaza, nikad samu vrijednost.",
         implementation: CheckSecrets,
         input_schema:
-          object_schema({ text: { type: "string", minLength: 1, maxLength: 60_000 } }, required: %w[text]),
+          object_schema(
+            { text: { type: "string", minLength: 1, maxLength: 60_000 } },
+            required: %w[text],
+          ),
         output_schema: CheckSecrets::OUTPUT_SCHEMA,
         required_scopes: CheckSecrets::REQUIRED_SCOPES,
         annotations: READ_ONLY,
+      )
+
+      plugin.register_mcp_tool(
+        "robot_create_topic",
+        title: "Nova tema na forumu",
+        description:
+          "Objavljuje novu temu kao prijavljeni korisnik u kategoriji u kojoj on smije otvarati teme " \
+            "(bez category_id ide u IT-Wiki). Pozovi tek kad korisnik potvrdi nacrt i kategoriju. " \
+            "Tekst sa lozinkama, ključevima ili tokenima biće odbijen.",
+        implementation: CreateTopic,
+        input_schema:
+          object_schema(
+            {
+              title: {
+                type: "string",
+                minLength: 5,
+                maxLength: 255,
+              },
+              raw: {
+                type: "string",
+                minLength: 20,
+                maxLength: 30_000,
+              },
+              category_id: {
+                type: "integer",
+                minimum: 1,
+              },
+              tags: {
+                type: "array",
+                items: {
+                  type: "string",
+                },
+                maxItems: 5,
+              },
+            },
+            required: %w[title raw],
+          ),
+        output_schema: CreateWikiTopic::OUTPUT_SCHEMA,
+        required_scopes: CreateWikiTopic::REQUIRED_SCOPES,
+        annotations: WRITE,
+        risk: :write,
+      )
+
+      plugin.register_mcp_tool(
+        "robot_reply",
+        title: "Odgovor u temu",
+        description:
+          "Dodaje odgovor u bilo koju temu u kojoj prijavljeni korisnik smije odgovarati (bez privatnih poruka). " \
+            "Pozovi tek kad korisnik potvrdi nacrt i temu. Tekst sa lozinkama, ključevima ili tokenima biće odbijen.",
+        implementation: Reply,
+        input_schema:
+          object_schema(
+            {
+              topic_id: {
+                type: "integer",
+                minimum: 1,
+              },
+              raw: {
+                type: "string",
+                minLength: 2,
+                maxLength: 30_000,
+              },
+              reply_to_post_number: {
+                type: "integer",
+                minimum: 1,
+              },
+            },
+            required: %w[topic_id raw],
+          ),
+        output_schema: WikiReply::OUTPUT_SCHEMA,
+        required_scopes: WikiReply::REQUIRED_SCOPES,
+        annotations: WRITE,
+        risk: :write,
       )
 
       plugin.register_mcp_tool(
@@ -426,10 +504,10 @@ module ::RobotMcp
       plugin.register_mcp_prompt(
         "robot.ocisti",
         title: "Očisti stare obaveze",
-        description: "Upute za pregled starih dodijeljenih tema i prijedlog šta zatvoriti, riješiti ili prebaciti.",
+        description:
+          "Upute za pregled starih dodijeljenih tema i prijedlog šta zatvoriti, riješiti ili prebaciti.",
         implementation: CleanupPrompt,
-        input_schema:
-          object_schema({ opis: { type: "string", maxLength: 1000 } }),
+        input_schema: object_schema({ opis: { type: "string", maxLength: 1000 } }),
         required_scopes: CleanupPrompt::REQUIRED_SCOPES,
         annotations: READ_ONLY,
       )
@@ -440,8 +518,7 @@ module ::RobotMcp
         description:
           "Upute za javljanje napretka (status, urađeno, sljedeći koraci, pitanje) u temu dodijeljenu korisniku.",
         implementation: ReportPrompt,
-        input_schema:
-          object_schema({ opis: { type: "string", maxLength: 1000 } }),
+        input_schema: object_schema({ opis: { type: "string", maxLength: 1000 } }),
         required_scopes: ReportPrompt::REQUIRED_SCOPES,
         annotations: READ_ONLY,
       )
@@ -451,8 +528,7 @@ module ::RobotMcp
         title: "Dokumentuj u IT-Wiki",
         description: "Upute za pisanje dokumentacije o urađenom poslu u IT-Wiki, bez lozinki.",
         implementation: DocumentPrompt,
-        input_schema:
-          object_schema({ opis: { type: "string", maxLength: 1000 } }),
+        input_schema: object_schema({ opis: { type: "string", maxLength: 1000 } }),
         required_scopes: DocumentPrompt::REQUIRED_SCOPES,
         annotations: READ_ONLY,
       )
@@ -466,9 +542,11 @@ module ::RobotMcp
       SiteSetting.robot_mcp_wiki_category_id.to_i
     end
 
+    # nil = no category limit: everything the logged-in user can see on the forum (Guardian decides).
     def read_category_ids
-      SiteSetting.robot_mcp_read_categories.to_s.split("|").map(&:to_i).push(wiki_category_id).uniq -
-        [0]
+      ids = SiteSetting.robot_mcp_read_categories.to_s.split("|").map(&:to_i) - [0]
+      return nil if ids.empty?
+      (ids + [wiki_category_id]).uniq - [0]
     end
 
     def ensure_member!(request_context)
@@ -481,10 +559,10 @@ module ::RobotMcp
 
     def find_topic!(topic_id, request_context, category_ids)
       topic = ::Topic.find_by(id: topic_id)
-      if topic.blank? || topic.private_message? || !category_ids.include?(topic.category_id) ||
+      if topic.blank? || topic.private_message? ||
+           (category_ids && !category_ids.include?(topic.category_id)) ||
            !request_context.guardian.can_see?(topic)
-        raise DiscourseMcp::ToolError,
-              "Tema nije pronađena ili nije u dozvoljenoj kategoriji."
+        raise DiscourseMcp::ToolError, "Tema nije pronađena ili nije u dozvoljenoj kategoriji."
       end
       topic
     end
@@ -493,7 +571,8 @@ module ::RobotMcp
       creator = PostCreator.new(user, **attributes)
       post = creator.create
       if creator.errors.present? || post.blank? || !post.persisted?
-        raise DiscourseMcp::ToolError, creator.errors.full_messages.join(", ").presence || "Objava nije uspjela."
+        raise DiscourseMcp::ToolError,
+              creator.errors.full_messages.join(", ").presence || "Objava nije uspjela."
       end
       post
     end
@@ -599,7 +678,10 @@ module ::RobotMcp
         Tools.ensure_member!(request_context)
         category_ids = Tools.read_category_ids
         limit = arguments.fetch("max_results", 10).to_i
-        query = "#{arguments.fetch("query")} categories:#{category_ids.map { |id| "=#{id}" }.join(",")}"
+        query = arguments.fetch("query").to_s
+        if category_ids
+          query = "#{query} categories:#{category_ids.map { |id| "=#{id}" }.join(",")}"
+        end
         results =
           ::Search.execute(
             query,
@@ -611,7 +693,7 @@ module ::RobotMcp
         posts =
           results
             .posts
-            .select { |post| category_ids.include?(post.topic&.category_id) }
+            .select { |post| category_ids.nil? || category_ids.include?(post.topic&.category_id) }
             .uniq(&:topic_id)
             .first(limit)
         Tools.result(
@@ -641,7 +723,8 @@ module ::RobotMcp
 
       def self.call(arguments:, request_context:)
         Tools.ensure_member!(request_context)
-        topic = Tools.find_topic!(arguments.fetch("topic_id"), request_context, Tools.read_category_ids)
+        topic =
+          Tools.find_topic!(arguments.fetch("topic_id"), request_context, Tools.read_category_ids)
         posts =
           topic
             .posts
@@ -740,9 +823,60 @@ module ::RobotMcp
 
       def self.call(arguments:, request_context:)
         user = Tools.ensure_member!(request_context)
-        topic = Tools.find_topic!(arguments.fetch("topic_id"), request_context, [Tools.wiki_category_id])
+        topic =
+          Tools.find_topic!(arguments.fetch("topic_id"), request_context, [Tools.wiki_category_id])
         SecretScanner.ensure_clean!(arguments.fetch("raw"))
         post = Tools.create_post!(user, topic_id: topic.id, raw: arguments.fetch("raw"))
+        Tools.result(
+          topic_id: post.topic_id,
+          post_number: post.post_number,
+          url: post.full_url,
+          username: post.user.username,
+        )
+      end
+    end
+
+    module CreateTopic
+      def self.call(arguments:, request_context:)
+        user = Tools.ensure_member!(request_context)
+        category_id = (arguments["category_id"] || Tools.wiki_category_id).to_i
+        category = ::Category.find_by(id: category_id)
+        if category.blank? || !request_context.guardian.can_create_topic_on_category?(category)
+          raise DiscourseMcp::ToolError,
+                "Kategorija nije pronađena ili prijavljeni korisnik u njoj ne smije otvarati teme."
+        end
+        SecretScanner.ensure_clean!(arguments.fetch("title"), arguments.fetch("raw"))
+        post =
+          Tools.create_post!(
+            user,
+            title: arguments.fetch("title"),
+            raw: arguments.fetch("raw"),
+            category: category.id,
+            tags: Array(arguments["tags"]),
+          )
+        Tools.result(
+          topic_id: post.topic_id,
+          title: post.topic.title,
+          url: post.topic.url,
+          username: post.user.username,
+        )
+      end
+    end
+
+    module Reply
+      def self.call(arguments:, request_context:)
+        user = Tools.ensure_member!(request_context)
+        topic = Tools.find_topic!(arguments.fetch("topic_id"), request_context, nil)
+        if !request_context.guardian.can_create_post_on_topic?(topic)
+          raise DiscourseMcp::ToolError,
+                "Prijavljeni korisnik ne smije odgovarati u ovu temu (zatvorena, arhivirana ili bez prava)."
+        end
+        SecretScanner.ensure_clean!(arguments.fetch("raw"))
+        attrs = { topic_id: topic.id, raw: arguments.fetch("raw") }
+        attrs[:reply_to_post_number] = arguments["reply_to_post_number"].to_i if arguments[
+          "reply_to_post_number"
+        ]
+        post = Tools.create_post!(user, **attrs)
         Tools.result(
           topic_id: post.topic_id,
           post_number: post.post_number,
@@ -773,7 +907,8 @@ module ::RobotMcp
             .where("posts.created_at > ?", RECENT_REPORT_DAYS.days.ago)
             .group("posts.topic_id")
             .maximum("posts.created_at")
-        my_last_post = Post.where(topic_id: ids, user_id: user.id).group(:topic_id).maximum(:created_at)
+        my_last_post =
+          Post.where(topic_id: ids, user_id: user.id).group(:topic_id).maximum(:created_at)
 
         words = arguments["keywords"].to_s.downcase.scan(/[\p{L}\p{N}_.-]{3,}/).uniq
         score = {}
@@ -805,8 +940,7 @@ module ::RobotMcp
             end
           end
         shown = topics.first(limit)
-        last_posters =
-          User.where(id: shown.map(&:last_post_user_id).compact.uniq).index_by(&:id)
+        last_posters = User.where(id: shown.map(&:last_post_user_id).compact.uniq).index_by(&:id)
         Tools.result(
           tasks:
             shown.map do |topic|
@@ -936,7 +1070,8 @@ module ::RobotMcp
                 "Nema posta za rješenje. Navedi post_number (tvoj zadnji post u temi nije pronađen)."
         end
         if post.post_number == 1
-          raise DiscourseMcp::ToolError, "Prvi post (zadatak) ne može biti rješenje; navedi odgovor."
+          raise DiscourseMcp::ToolError,
+                "Prvi post (zadatak) ne može biti rješenje; navedi odgovor."
         end
         if !request_context.guardian.can_accept_answer?(topic, post)
           raise DiscourseMcp::ToolError, "Nemaš pravo označiti rješenje u ovoj temi."
